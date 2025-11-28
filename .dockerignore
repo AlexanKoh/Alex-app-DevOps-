@@ -1,0 +1,40 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Docker
+Dockerfile
+docker-compose*
+.dockerignore
+
+# Git
+.git/
+.gitignore
+
+# Environment
+.env
+.env.*
+
+# Docs
+README.md
+LICENSE
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
