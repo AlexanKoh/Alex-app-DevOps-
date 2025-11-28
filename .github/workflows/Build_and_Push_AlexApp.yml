@@ -5,7 +5,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: AlexApp
+  IMAGE_NAME: alexapp
   
 jobs:
   build-and-push:
@@ -34,10 +34,10 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ghcr.io/alexankoh/alexapp:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Print image info
         run: |
-          echo "✅ Image successfully pushed to: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "Image successfully pushed to: ghcr.io/alexankoh/alexapp:latest"
