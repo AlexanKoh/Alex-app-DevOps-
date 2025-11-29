@@ -1,0 +1,12 @@
+---
+namespace: "flask-app"
+mysql_root_password: "your_secure_root_password_here"
+db_name: "flaskapp"
+db_user: "flaskuser"
+db_password: "your_secure_db_password_here"
+app_image: "ghcr.io/alexankoh/alexapp:latest"
+debug: "False"
+web_memory_limit: "512Mi"
+web_memory_request: "256Mi"
+mysql_memory_limit: "1Gi"
+mysql_memory_request: "512Mi"
