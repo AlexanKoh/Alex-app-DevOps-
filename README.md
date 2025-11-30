@@ -2,6 +2,15 @@
 
 A simple web application built with Flask and MySQL database, supporting both Docker Compose deployment and full GitOps pipeline with Argo CD in Kubernetes.
 
+https://github-readme-stats.vercel.app/api?username=AlexanKoh&show_icons=true&theme=radical
+
+https://github-readme-stats.vercel.app/api/top-langs/?username=AlexanKoh&layout=compact&theme=radical&hide=html,css
+
+https://github.com/AlexanKoh/Alex-app-DevOps-/actions/workflows/docker-build.yml/badge.svg
+https://img.shields.io/badge/Docker-Build%2520Passing-success
+https://img.shields.io/badge/Kubernetes-Deployed-blue
+https://img.shields.io/badge/ArgoCD-Synced-green
+
 ## Architecture
 
 - **Frontend**: Flask Python application
@@ -47,7 +56,7 @@ The application will be available at: `http://localhost:5000`
 
 ### Automated Docker Builds with GitHub Actions
 The project includes GitHub Actions workflow that automatically builds and pushes Docker images to GitHub Container Registry:
-Build_and_Push_AlexApp.yml
+`Build_and_Push_AlexApp.yml`
 
 ### Kubernetes Cluster Deployment with GitOps
 
