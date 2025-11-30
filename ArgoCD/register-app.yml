@@ -1,0 +1,28 @@
+---
+- name: Register Application in Argo CD
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    kubeconfig: "../kubeconfig.yaml"
+    argocd_namespace: "argocd"
+
+  tasks:
+    - name: Create Argo CD Application
+      shell: |
+        kubectl --kubeconfig={{ kubeconfig }} apply -f applications/my-app.yaml -n {{ argocd_namespace }}
+
+    - name: Wait for application to sync
+      command: |
+        kubectl --kubeconfig={{ kubeconfig }} wait application/flask-full-app \
+        -n {{ argocd_namespace }} --for=jsonpath='{.status.sync.status}'=Synced --timeout=600s
+
+    - name: Get application status
+      command: |
+        kubectl --kubeconfig={{ kubeconfig }} get application/flask-full-app -n {{ argocd_namespace }} -o wide
+      register: app_status
+
+    - name: Show application status
+      debug:
+        var: app_status.stdout

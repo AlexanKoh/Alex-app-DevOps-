@@ -1,0 +1,188 @@
+---
+- name: Setup Kubernetes Cluster Only (without app deployment)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    namespace: "flask-app"
+    kubeconfig: "../kubeconfig.yaml"
+
+  tasks:
+    - name: Create namespace
+      shell: |
+        kubectl --kubeconfig={{ kubeconfig }} create namespace {{ namespace }} --dry-run=client -o yaml | 
+        kubectl --kubeconfig={{ kubeconfig }} apply -f -
+      ignore_errors: true
+
+    - name: Install Metrics Server for HPA (AKS compatible)
+      shell: |
+        kubectl --kubeconfig={{ kubeconfig }} apply -f - <<EOF
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          labels:
+            k8s-app: metrics-server
+          name: metrics-server
+          namespace: kube-system
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          labels:
+            k8s-app: metrics-server
+          name: system:metrics-server
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - nodes
+          - nodes/stats
+          - namespaces
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          labels:
+            k8s-app: metrics-server
+          name: system:metrics-server
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: system:metrics-server
+        subjects:
+        - kind: ServiceAccount
+          name: metrics-server
+          namespace: kube-system
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          labels:
+            k8s-app: metrics-server
+          name: metrics-server
+          namespace: kube-system
+        spec:
+          ports:
+          - name: https
+            port: 443
+            protocol: TCP
+            targetPort: https
+          selector:
+            k8s-app: metrics-server
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          labels:
+            k8s-app: metrics-server
+          name: metrics-server
+          namespace: kube-system
+        spec:
+          selector:
+            matchLabels:
+              k8s-app: metrics-server
+          template:
+            metadata:
+              labels:
+                k8s-app: metrics-server
+            spec:
+              containers:
+              - args:
+                - --cert-dir=/tmp
+                - --secure-port=4443
+                - --kubelet-preferred-address-types=InternalIP
+                - --kubelet-insecure-tls
+                - --v=2
+                image: registry.k8s.io/metrics-server/metrics-server:v0.6.4
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /livez
+                    port: https
+                    scheme: HTTPS
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                name: metrics-server
+                ports:
+                - containerPort: 4443
+                  name: https
+                  protocol: TCP
+                readinessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /readyz
+                    port: https
+                    scheme: HTTPS
+                  initialDelaySeconds: 20
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 100Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1000
+                volumeMounts:
+                - mountPath: /tmp
+                  name: tmp-dir
+              nodeSelector:
+                kubernetes.io/os: linux
+              priorityClassName: system-cluster-critical
+              serviceAccountName: metrics-server
+              volumes:
+              - emptyDir: {}
+                name: tmp-dir
+        ---
+        apiVersion: apiregistration.k8s.io/v1
+        kind: APIService
+        metadata:
+          name: v1beta1.metrics.k8s.io
+        spec:
+          group: metrics.k8s.io
+          groupPriorityMinimum: 100
+          insecureSkipTLSVerify: true
+          service:
+            name: metrics-server
+            namespace: kube-system
+          version: v1beta1
+          versionPriority: 100
+        EOF
+
+    - name: Wait for Metrics Server to be ready
+      command: kubectl --kubeconfig={{ kubeconfig }} wait --for=condition=ready pod -l k8s-app=metrics-server -n kube-system --timeout=300s
+      ignore_errors: true
+
+    - name: Create MySQL secret
+      shell: |
+        kubectl --kubeconfig={{ kubeconfig }} create secret generic mysql-secret \
+        -n {{ namespace }} \
+        --from-literal=mysql-root-password=rootpass123 \
+        --from-literal=mysql-database=flaskapp \
+        --from-literal=mysql-user=flaskuser \
+        --from-literal=mysql-password=userpass123 \
+        --dry-run=client -o yaml | 
+        kubectl --kubeconfig={{ kubeconfig }} apply -f -
+
+    - name: Create Web app secret
+      shell: |
+        kubectl --kubeconfig={{ kubeconfig }} create secret generic web-secret \
+        -n {{ namespace }} \
+        --from-literal=db-host=mysql-service \
+        --from-literal=db-port=3306 \
+        --from-literal=db-user=flaskuser \
+        --from-literal=db-password=userpass123 \
+        --from-literal=db-name=flaskapp \
+        --from-literal=debug=False \
+        --dry-run=client -o yaml | 
+        kubectl --kubeconfig={{ kubeconfig }} apply -f -

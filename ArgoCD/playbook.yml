@@ -1,0 +1,65 @@
+---
+- name: Install and Configure Argo CD
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    kubeconfig: "../kubeconfig.yaml"
+    argocd_namespace: "argocd"
+    app_namespace: "flask-app"
+
+  tasks:
+    - name: Create argocd namespace
+      shell: |
+        kubectl --kubeconfig={{ kubeconfig }} create namespace {{ argocd_namespace }} --dry-run=client -o yaml | 
+        kubectl --kubeconfig={{ kubeconfig }} apply -f -
+
+    - name: Add Argo CD Helm repository
+      community.kubernetes.helm_repository:
+        name: argo
+        repo_url: https://argoproj.github.io/argo-helm
+        kubeconfig: "{{ kubeconfig }}"
+
+    - name: Install Argo CD via Helm
+      community.kubernetes.helm:
+        name: argocd
+        namespace: "{{ argocd_namespace }}"
+        chart_ref: argo/argo-cd
+        chart_version: "5.46.8"
+        release_values:
+          server:
+            service:
+              type: LoadBalancer
+            extraArgs:
+              - --insecure
+          configs:
+            params:
+              server.insecure: "true"
+        kubeconfig: "{{ kubeconfig }}"
+        create_namespace: false
+
+    - name: Wait for Argo CD to be ready
+      command: |
+        kubectl --kubeconfig={{ kubeconfig }} wait --for=condition=ready pod \
+        -l app.kubernetes.io/name=argocd-server \
+        -n {{ argocd_namespace }} --timeout=300s
+      register: argocd_wait
+      until: argocd_wait is succeeded
+      retries: 10
+      delay: 15
+
+    - name: Get Argo CD admin password
+      shell: |
+        kubectl --kubeconfig={{ kubeconfig }} get secret argocd-initial-admin-secret \
+        -n {{ argocd_namespace }} -o jsonpath='{.data.password}' | base64 -d
+      register: argocd_password
+      changed_when: false
+
+    - name: Show Argo CD access info
+      debug:
+        msg: |
+          Argo CD installed successfully!
+          URL: http://$(kubectl --kubeconfig={{ kubeconfig }} get svc argocd-server -n {{ argocd_namespace }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):80
+          Username: admin
+          Password: {{ argocd_password.stdout }}

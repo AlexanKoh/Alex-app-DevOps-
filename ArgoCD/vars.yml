@@ -1,0 +1,4 @@
+---
+argocd_version: "5.46.8"
+argocd_namespace: "argocd"
+app_namespace: "flask-app"
