@@ -2,14 +2,12 @@
 
 A simple web application built with Flask and MySQL database, supporting both Docker Compose deployment and full GitOps pipeline with Argo CD in Kubernetes.
 
-https://github-readme-stats.vercel.app/api?username=AlexanKoh&show_icons=true&theme=radical
-
-https://github-readme-stats.vercel.app/api/top-langs/?username=AlexanKoh&layout=compact&theme=radical&hide=html,css
-
-https://github.com/AlexanKoh/Alex-app-DevOps-/actions/workflows/docker-build.yml/badge.svg
-https://img.shields.io/badge/Docker-Build%2520Passing-success
-https://img.shields.io/badge/Kubernetes-Deployed-blue
-https://img.shields.io/badge/ArgoCD-Synced-green
+![AlexanKoh's GitHub Stats](https://github-readme-stats.vercel.app/api?username=AlexanKoh&show_icons=true&theme=radical)
+![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=AlexanKoh&layout=compact&theme=radical&hide=html,css)
+![GitHub Actions](https://github.com/AlexanKoh/Alex-app-DevOps-/actions/workflows/docker-build.yml/badge.svg)
+![Docker Build](https://img.shields.io/badge/Docker-Build%20Passing-success)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Deployed-blue)
+![ArgoCD](https://img.shields.io/badge/ArgoCD-Synced-green)
 
 ## Architecture
 
